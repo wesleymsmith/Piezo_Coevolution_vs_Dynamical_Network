@@ -1,3 +1,8 @@
+from __future__ import division
+from __future__ import print_function
+from builtins import map
+from builtins import str
+from past.utils import old_div
 import numpy as np
 import pandas as pd
 import re
@@ -13,7 +18,7 @@ noPytraj=False
 try:
     import pytraj as pt
 except ImportError:
-    print "could not import pytraj"
+    print("could not import pytraj")
     noPytraj=True
     
 import subprocess
@@ -45,25 +50,25 @@ def read_gCorrelation_data(filePath,verbose=False):
         entries=np.zeros(nEntries)
         count=0
         if(nEntries > 1000):
-            cMod=np.ceil(nEntries/100)
+            cMod=np.ceil(old_div(nEntries,100))
             lCount=0
         elif nEntries > 100:
-            cMod=np.ceil(nEntries/10)
+            cMod=np.ceil(old_div(nEntries,10))
         else:
             cMod=1
         if verbose:
-            print "Reading file "+filePath+":",
+            print("Reading file "+filePath+":", end=' ')
         while line:
             lineTokens=line.split()
-            lineEntries=np.extract(map(is_number,np.array(lineTokens)),np.array(lineTokens))
+            lineEntries=np.extract(list(map(is_number,np.array(lineTokens))),np.array(lineTokens))
             entries[count:(count+len(lineEntries))]=lineEntries
             count=count+len(lineEntries)
             line=inputFile.readline()
             if verbose:
                 if count % cMod == 0:
-                    print str(np.floor(1000 * count / nEntries)/10)+"%",
+                    print(str(old_div(np.floor(old_div(1000 * count, nEntries)),10))+"%", end=' ')
         if verbose:
-            print ""
+            print("")
     return collections.OrderedDict({"nRows":nRows,"nCols":nCols,"entries":entries})
 
 def write_carma_matrix(filepath,nRows,nCols,dataEntries,
@@ -71,19 +76,19 @@ def write_carma_matrix(filepath,nRows,nCols,dataEntries,
                        header="((protein) and (not hydrogen)) and ((name CA) )",
                        verbose=False):
     if verbose:
-        print "Writting carma matrix format file: "+filepath
+        print("Writting carma matrix format file: "+filepath)
     with open(filepath,'w') as outputFile:
         if writeHeader:
             if verbose:
-                print 'Writting header'
+                print('Writting header')
             outputFile.write(header)
             outputFile.write('\n')
         if verbose:
-            print 'Writting '+str(nRows)+' rows:',
+            print('Writting '+str(nRows)+' rows:', end=' ')
             if nRows > 100:
-                cMod=nRows/10
+                cMod=old_div(nRows,10)
             elif nRows > 10000:
-                cMod=nRows/100
+                cMod=old_div(nRows,100)
                 count=0
             else:
                 cMod=1
@@ -95,26 +100,26 @@ def write_carma_matrix(filepath,nRows,nCols,dataEntries,
             if verbose and (iRow % cMod == 0):
                 if cMod>1:
                     if (nRows > 10000) and (count > 9):
-                        print "\,    "
+                        print("\,    ")
                         count=0
-                    print "%4.1f%s "%((np.ceil((1000*iRow)/nRows)/10.0),"%"),
+                    print("%4.1f%s "%((np.ceil(old_div((1000*iRow),nRows))/10.0),"%"), end=' ')
                     if nRows > 10000:
                         count = count+1
                 else:
-                    print ".",
+                    print(".", end=' ')
         if verbose:
-            print "\ndone"
+            print("\ndone")
             
             
 
 def read_carma_matrix(filepath,has_header=True,returnHeader=False,verbose=False):
     #assumes all carma matrices are square matrices!
     if verbose:
-        print "Reading carma matrix format file: "+filepath
+        print("Reading carma matrix format file: "+filepath)
     with open(filepath,'r') as inputFile:
         if(has_header):
             if verbose:
-                print 'reading header'
+                print('reading header')
             headerLine=inputFile.readline()
         line=inputFile.readline()
         count=0
@@ -126,11 +131,11 @@ def read_carma_matrix(filepath,has_header=True,returnHeader=False,verbose=False)
                 nEntries=nRows*nRows
                 entries=np.zeros(nEntries)
                 if(verbose):
-                    print 'Reading '+str(nRows)+' rows: ',
+                    print('Reading '+str(nRows)+' rows: ', end=' ')
                     if nRows > 1000:
-                        cMod = np.ceil(nRows / 100)
+                        cMod = np.ceil(old_div(nRows, 100))
                     elif nRows > 100:
-                        cMod = np.ceil(nRows / 10)
+                        cMod = np.ceil(old_div(nRows, 10))
                     else:
                         cMod = 1
             valArray=np.array(lineTokens)
@@ -141,13 +146,13 @@ def read_carma_matrix(filepath,has_header=True,returnHeader=False,verbose=False)
                 entries[iStart:iEnd]=valArray
                 if verbose & (count % cMod == 0):
                     if nRows > 10:
-                        print str(np.floor(1000*count/nRows)/10)+"% ",
+                        print(str(old_div(np.floor(old_div(1000*count,nRows)),10))+"% ", end=' ')
                     else:
-                        print ".",
+                        print(".", end=' ')
                 count=count+1
             line=inputFile.readline()
         if verbose:
-            print ""
+            print("")
     if count > 0:
         if has_header & returnHeader:
             return collections.OrderedDict({"headerLine":headerLine,"nRows":nRows,"nCols":nRows,
@@ -155,7 +160,7 @@ def read_carma_matrix(filepath,has_header=True,returnHeader=False,verbose=False)
         else:
             return collections.OrderedDict({"nRows":nRows,"nCols":nRows,"entries":entries})
     else:
-        print "Error! Data file appears empty!"
+        print("Error! Data file appears empty!")
 
 def convert_gCorrelationData_to_carmaMatrix(gCorrFilePath,outputFilePath,
                                             writeHeader=True,
@@ -173,7 +178,7 @@ def convert_gCorrelationData_to_carmaMatrix(gCorrFilePath,outputFilePath,
                        dataEntries=gCorrData['entries'],
                        writeHeader=writeHeader,header=header,verbose=verbose)
     if verbose:
-        print "Conversion complete"
+        print("Conversion complete")
 
 #Utilities for computing 'flow betweenness' scores for matrix
 #representations of networks
@@ -207,12 +212,12 @@ def write_dataDict_to_carma_matrix(filepath,dataDict,writeHeader=True,
     if not ( ('nRows' in dataDict) and \
              ('nCols' in dataDict) and \
              ('entries' in dataDict) ):
-        print "ERROR! data dictionary is missing needed key value pairs. !!Aborting!!"
+        print("ERROR! data dictionary is missing needed key value pairs. !!Aborting!!")
         return
     if (writeHeader and useDictHeader):
         if not ('headerLine' in dataDict) :
-            print "WARNING! headerLine was missing from data dictionary."
-            print " -Defaulting to: "+header
+            print("WARNING! headerLine was missing from data dictionary.")
+            print(" -Defaulting to: "+header)
             headerLine=header
         else:
             headerLine=dataDict['headerLine']
@@ -244,47 +249,47 @@ def gen_perResCOM_traj(inputTrajPath,inputTopPath,residList,
     #    return
     #Default is to return per-residue center of mass mapped to alpha carbons of each residue
     if verbose:
-        print "loading input trajectory"
+        print("loading input trajectory")
     iterTraj=pt.iterload(inputTrajPath,top=inputTopPath)
     if verbose:
-        print iterTraj
-    commandList=map(lambda rid: "vector center :"+str(rid)+COM_mask,residList)
+        print(iterTraj)
+    commandList=["vector center :"+str(rid)+COM_mask for rid in residList]
     if verbose:
         if len(commandList) >= 10:
-            print "first 10 mapped commands: ",
-            print commandList[0:10]
+            print("first 10 mapped commands: ", end=' ')
+            print(commandList[0:10])
         else:
-            print "mapped commands: ",
-            print commandList
-        print "running mapped commands"
-    perResData=np.array(pt.compute(commandList,iterTraj,n_cores=threads).values())
+            print("mapped commands: ", end=' ')
+            print(commandList)
+        print("running mapped commands")
+    perResData=np.array(list(pt.compute(commandList,iterTraj,n_cores=threads).values()))
     if resSelectMask=='':
-        residString=map(lambda rid:str(rid),residList)
+        residString=[str(rid) for rid in residList]
         resSelectMask=':'+','.join(residString)+resAtomMask
     if verbose:
-        print "extracting residue selection subtrajectory"
+        print("extracting residue selection subtrajectory")
     tempTraj=iterTraj[0:iterTraj.n_frames,resSelectMask]
     if verbose:
-        print "subtrajectory info:"
-        print tempTraj
+        print("subtrajectory info:")
+        print(tempTraj)
     if not (tempTraj.shape[0]==perResData.shape[1] and \
             tempTraj.shape[1]==perResData.shape[0]):
-        print "ERROR! mismatch between trajectory subselection coordinates and perResidue command data"
-        print " trajectory.xyz.shape=",
-        print trajectory.xyz.shape,
-        print "; perResData.shape=",
-        print perResData.shape[[1,0,2]]
+        print("ERROR! mismatch between trajectory subselection coordinates and perResidue command data")
+        print(" trajectory.xyz.shape=", end=' ')
+        print(trajectory.xyz.shape, end=' ')
+        print("; perResData.shape=", end=' ')
+        print(perResData.shape[[1,0,2]])
         return
     if verbose:
-        print "updating trajectory coordinates"
+        print("updating trajectory coordinates")
     for iDim in np.arange(3):
         tempTraj.xyz[:,:,iDim]=perResData[:,:,iDim].T
-    print "done"
+    print("done")
     return tempTraj
 
 def gen_smoothed_contact_map(traj,resids,
                              timeAggFun=lambda timeSeries: 1.0*(np.mean(timeSeries)>.75),
-                             distSmoothFun=lambda distArray:(6.0-np.clip(distArray,3.0,6.0))/(6.0-3.0),
+                             distSmoothFun=lambda distArray:old_div((6.0-np.clip(distArray,3.0,6.0)),(6.0-3.0)),
                              verbose=False,verboseLevel=0):
     #if noPytrajFlag:
     #    print "ERROR! gen_perResCOM_traj cannot be run if pytraj fails to load. Aborting"
@@ -303,11 +308,11 @@ def gen_smoothed_contact_map(traj,resids,
     tempMat=np.zeros(nResidues)
     residArray=np.array(resids)
     if verbose:
-        print "Computing contact matrix:",
+        print("Computing contact matrix:", end=' ')
         if nResidues > 100:
-            cMod=nResidues/100
+            cMod=old_div(nResidues,100)
         elif nResidues > 10:
-            cMod=nResidues/10
+            cMod=old_div(nResidues,10)
         else:
             cMod=1
         lCount=0
@@ -316,28 +321,27 @@ def gen_smoothed_contact_map(traj,resids,
     for iRow in np.arange(nResidues):
         if verbose:
             if((iRow % cMod == 0) or (iRow==(nResidues-1))):
-                print "%4.1f%s "%(np.ceil(1000*iRow/nResidues)/10,"%"),
+                print("%4.1f%s "%(old_div(np.ceil(old_div(1000*iRow,nResidues)),10),"%"), end=' ')
                 if lCount==10:
-                    print "\n                         ",
+                    print("\n                         ", end=' ')
                     lCount=0
                 else:
                     lCount=lCount+1
         rgrid_i=residArray[mgrid_i[iRow,:].flatten()]
         rgrid_j=residArray[mgrid_j[iRow,:].flatten()]
-        commandList=map(lambda rid,rjd: 'nativecontacts :'+\
-                        str(rid)+' :'+str(rjd)+' mindist',rgrid_i,rgrid_j)
-        tempDists=np.array(pt.compute(commandList,traj).values()[2:(3*len(rgrid_i)):3])
+        commandList=list(map(lambda rid,rjd: 'nativecontacts :'+\
+                        str(rid)+' :'+str(rjd)+' mindist',rgrid_i,rgrid_j))
+        tempDists=np.array(list(pt.compute(commandList,traj).values())[2:(3*len(rgrid_i)):3])
         if verbose and (verboseLevel>0):
-            print commandList[0:3]
-            print type(tempDists),
-            print " ",
-            print tempDists.shape,
-            print tempDists
-        matVals=map(lambda timeSeries:timeAggFun(timeSeries),
-                    distSmoothFun(tempDists))
+            print(commandList[0:3])
+            print(type(tempDists), end=' ')
+            print(" ", end=' ')
+            print(tempDists.shape, end=' ')
+            print(tempDists)
+        matVals=[timeAggFun(timeSeries) for timeSeries in distSmoothFun(tempDists)]
         tempMat[mgrid_i[iRow,:].flatten(),mgrid_j[iRow,:].flatten()]=matVals
         tempMat[iRow,iRow]=0
-    print ""
+    print("")
     return tempMat
 
 #functions for generating current flow betweenness data from network matrices
@@ -387,75 +391,67 @@ def e_btw_from_Linv(Linv,Amat,sources,targets,verbose=False,verboseLevel=0,
     #some basic sanity checks
     if((Linv.shape[0]!=Linv.shape[1]) or 
        (Amat.shape[0]!=Amat.shape[1])):
-        print "ERROR! Input matrices must by square!"
+        print("ERROR! Input matrices must by square!")
         eMat[:,:]=0
         return(eMat)
     if((Linv.shape[0]!=Amat.shape[0]) or
        (Linv.shape[1]!=Amat.shape[1])):
-        print "ERROR! Input matrices must have the same shape!"
+        print("ERROR! Input matrices must have the same shape!")
         eMat[:,:]=0
         return(eMat)
     if ((np.min(sources)<0) or
         (np.min(targets)<0) or
         (np.max(sources)>=Linv.shape[0]) or
         (np.max(targets)>=Linv.shape[1])):
-        print "ERROR! invalid source or target index detected!"
+        print("ERROR! invalid source or target index detected!")
         eMat[:,:]=0
         return(eMat)
     #get indices of edges... e.g. non-zero entries of Amat
     (Ei,Ej)=np.nonzero(Amat)
     if verbose:
         if verboseLevel > 2:
-            print "Linv:",
-            print Linv
-            print "Amat:",
-            print Amat
-        print "computing betweenness for %g edges"%len(Ei)
+            print("Linv:", end=' ')
+            print(Linv)
+            print("Amat:", end=' ')
+            print(Amat)
+        print("computing betweenness for %g edges"%len(Ei))
         if verboseLevel > 0:
-            print "Ei:",
-            print Ei
-            print "Ej:",
-            print Ej
+            print("Ei:", end=' ')
+            print(Ei)
+            print("Ej:", end=' ')
+            print(Ej)
     if verbose and useProgressBar:
-        Ebtw=np.array(map(lambda i,j:
+        Ebtw=old_div(np.array(list(map(lambda i,j:
                     Amat[i,j]*\
-                    np.sum(map(lambda src:
-                        np.sum(map(lambda trg:
-                            np.abs(Linv[i,src]+Linv[j,trg]-\
-                                   Linv[i,trg]-Linv[j,src]),
-                            targets)),
-                        sources)),
+                    np.sum([np.sum([np.abs(Linv[i,src]+Linv[j,trg]-\
+                                   Linv[i,trg]-Linv[j,src]) for trg in targets]) for src in sources]),
                           pbarFun(Ei,file=sys.stdout),
-                          Ej))/(len(sources)*len(targets))
+                          Ej))),(len(sources)*len(targets)))
     else:
-        Ebtw=np.array(map(lambda i,j:
+        Ebtw=old_div(np.array(list(map(lambda i,j:
                     Amat[i,j]*\
-                    np.sum(map(lambda src:
-                        np.sum(map(lambda trg:
-                            np.abs(Linv[i,src]+Linv[j,trg]-\
-                                   Linv[i,trg]-Linv[j,src]),
-                            targets)),
-                        sources)),
+                    np.sum([np.sum([np.abs(Linv[i,src]+Linv[j,trg]-\
+                                   Linv[i,trg]-Linv[j,src]) for trg in targets]) for src in sources]),
                           Ei,
-                          Ej))/(len(sources)*len(targets))
+                          Ej))),(len(sources)*len(targets)))
     if verbose:
         if verboseLevel > 0:
-            print "Ebtw:",
-            print Ebtw
+            print("Ebtw:", end=' ')
+            print(Ebtw)
             if verboseLevel > 1:
-                print "(Ei,Ej):Ebtw;eMat"
+                print("(Ei,Ej):Ebtw;eMat")
     for iInd in np.arange(len(Ebtw)):
         eMat[Ei[iInd],Ej[iInd]]=Ebtw[iInd]
         if verbose :
             if verboseLevel > 1:
-                print "(",
-                print Ei[iInd],
-                print ",",
-                print Ej[iInd],
-                print "):",
-                print Ebtw[iInd],
-                print ";",
-                print eMat[Ei[iInd],Ej[iInd]]
+                print("(", end=' ')
+                print(Ei[iInd], end=' ')
+                print(",", end=' ')
+                print(Ej[iInd], end=' ')
+                print("):", end=' ')
+                print(Ebtw[iInd], end=' ')
+                print(";", end=' ')
+                print(eMat[Ei[iInd],Ej[iInd]])
     return(eMat)
     
 
@@ -473,16 +469,16 @@ def getBtwMat(mat,sources,targets,verbose=False,verboseLevel=0,
     #Also, the sources and targets must be disjoint sets or the results
     #will be incorrect.
     if verbose:
-        print "computing matrix Laplacian"
+        print("computing matrix Laplacian")
     Lmat=matLap(copy.deepcopy(mat))
     if verbose:
-        print "extracting weighted adjacency matrix"
+        print("extracting weighted adjacency matrix")
     Amat=matAdj(copy.deepcopy(mat))
     if verbose:
-        print "computing moore-penrose inverse of matrix Laplacian"
+        print("computing moore-penrose inverse of matrix Laplacian")
     Linv=np.linalg.pinv(Lmat)
     if verbose:
-        print "generating flow betweenness scores"
+        print("generating flow betweenness scores")
     return(e_btw_from_Linv(Linv,Amat,sources,targets,
                            verbose=verbose,verboseLevel=verboseLevel,
                            useProgressBar=useProgressBar,
@@ -491,19 +487,19 @@ def getBtwMat(mat,sources,targets,verbose=False,verboseLevel=0,
     
 
 def calcCorrDissipation(corrMat,btwMat):
-    return np.sum(np.abs(np.array(btwMat))*\
-                  np.abs(np.array(btwMat))/np.abs(np.array(corrMat)))
+    return np.sum(old_div(np.abs(np.array(btwMat))*\
+                  np.abs(np.array(btwMat)),np.abs(np.array(corrMat))))
 
 #functions for running and parsing subopt files generated via the VMD 'subopt' command
 
 def validate_subopt_file(filepath,verbose=False):
     if not os.path.exists(filepath):
         if verbose:
-            print filepath+" does not exist."
+            print(filepath+" does not exist.")
         return False
     if not os.path.isfile(filepath):
         if verbose:
-            print filepath+" is not a file."
+            print(filepath+" is not a file.")
         return False
     foundPathStart=False
     foundPathCount=False
@@ -517,20 +513,20 @@ def validate_subopt_file(filepath,verbose=False):
                 break
     if foundPathStart and foundPathCount:
         if verbose:
-            print filepath+' is a valid subopt file'
+            print(filepath+' is a valid subopt file')
         return True
     else:
         if verbose:
-            print filepath+" : ",
+            print(filepath+" : ", end=' ')
             if not foundPathStart:
-                print "is missing paths section, ",
+                print("is missing paths section, ", end=' ')
             if not foundPathCount:
-                print "is missing path count"
+                print("is missing path count")
         return False
 
 def get_subopt_pathCount(filepath,verbose=False):
     if not validate_subopt_file(filepath,verbose=verbose):
-        print "ERROR! "+filepath+" is not a valid subopt file."
+        print("ERROR! "+filepath+" is not a valid subopt file.")
         return -1
     else:
         with open(filepath,'r') as suboptFile:
@@ -539,17 +535,17 @@ def get_subopt_pathCount(filepath,verbose=False):
                     tokens=str.split(line)
                     pathCount=tokens[len(tokens)-1]
                     if verbose:
-                        print 'path count = '+str(pathCount)
+                        print('path count = '+str(pathCount))
                     if not str.isdigit(pathCount):
                         break
                     return pathCount
-        print "ERROR! Something went wrong, the file seemed valid but had an invalid path count line"
+        print("ERROR! Something went wrong, the file seemed valid but had an invalid path count line")
         return -1
 
 def get_subopt_pathData(filepath,verbose=False):
     pathData=collections.OrderedDict()
     if not validate_subopt_file(filepath,verbose=verbose):
-        print "ERROR! "+filepath+" is not a valid subopt file."
+        print("ERROR! "+filepath+" is not a valid subopt file.")
         return pathData
     else:
         foundPathStart=False
@@ -563,7 +559,7 @@ def get_subopt_pathData(filepath,verbose=False):
                     tokens=str.split(line)
                     pathCount=tokens[len(tokens)-1]
                     if verbose:
-                        print 'path count = '+str(pathCount)
+                        print('path count = '+str(pathCount))
                     if not str.isdigit(pathCount):
                         foundPathCount=False
                         pathCount=-1
@@ -572,23 +568,23 @@ def get_subopt_pathData(filepath,verbose=False):
                     if re.search('The final paths are',line):
                         foundPathStart=True
                 else:
-                    tokens=map(int,re.sub('[,)(]','',line).split())
+                    tokens=list(map(int,re.sub('[,)(]','',line).split()))
                     tempPath=tokens[0:(len(tokens)-1)]
                     pathData['paths'].append(tempPath)
                     pathData['lengths'].append(tokens[len(tokens)-1])
         if not foundPathStart:
-            print "ERROR! "+filepath+" seemed valid but path section was apparently absent"
+            print("ERROR! "+filepath+" seemed valid but path section was apparently absent")
             return pathData
         if not foundPathCount:
-            print "Warning! final path count line was missing or ill-formed!"
+            print("Warning! final path count line was missing or ill-formed!")
             pathData['count']=len(pathData['paths'])
         else:
             if len(pathData['paths']) != int(pathCount):
-                print "Warning! subopt file lists number of paths as",
-                print str(pathCount),
-                print "but",
-                print len(pathData['paths']),
-                print "paths were found."
+                print("Warning! subopt file lists number of paths as", end=' ')
+                print(str(pathCount), end=' ')
+                print("but", end=' ')
+                print(len(pathData['paths']), end=' ')
+                print("paths were found.")
                 pathData['count']=len(pathData['paths'])
             else:
                 pathData['count']=pathCount
@@ -611,7 +607,7 @@ def run_external_subopt(networkMatFilePath,outputFilePath,
             outputFilePath,
             str(dilationValue),str(sID),str(tID)])
     if verbose:
-        print 'running external subopt command: '+suboptCommand
+        print('running external subopt command: '+suboptCommand)
     os.system(suboptCommand)
     if returnSuboptData:
         return get_subopt_pathData(outputFilePath+".out",verbose=verbose)
@@ -625,9 +621,9 @@ def run_subopt_till_pathCount(networkMatFilePath,sourceNode,targetNode,
                               verbose=False,verboseLevel=0):
     subVerbose=(verbose and (verboseLevel > 0))
     if verbose:
-        print 'running iterative dilation till '+str(minPathCount)+' paths are attained:'
+        print('running iterative dilation till '+str(minPathCount)+' paths are attained:')
         if not subVerbose:
-            print '(%dilation,pathCount):',
+            print('(%dilation,pathCount):', end=' ')
     percentDilation=0
     dilationValue=0
     outputFileName='.'.join([
@@ -641,7 +637,7 @@ def run_subopt_till_pathCount(networkMatFilePath,sourceNode,targetNode,
                         verbose=subVerbose)
     suboptDataFilePath='.'.join([outputFilePath,'out'])
     if not validate_subopt_file(suboptDataFilePath):
-        print "ERROR! subopt failed to generate a valid output file. Aborting"
+        print("ERROR! subopt failed to generate a valid output file. Aborting")
         if returnSuboptData:
             if onlyFinalRun:
                 return collections.OrderedDict()
@@ -651,13 +647,13 @@ def run_subopt_till_pathCount(networkMatFilePath,sourceNode,targetNode,
             return
     pathCount=get_subopt_pathCount(suboptDataFilePath)
     if verbose:
-        print "(%g,%g)"%(float(percentDilation),float(pathCount)),
+        print("(%g,%g)"%(float(percentDilation),float(pathCount)), end=' ')
         if not subVerbose:
-            print ",",
+            print(",", end=' ')
         else:
-            print ""
+            print("")
     tempData=get_subopt_pathData(suboptDataFilePath,subVerbose)
-    optPathLength=np.min(map(float,tempData['lengths']))
+    optPathLength=np.min(list(map(float,tempData['lengths'])))
     if returnSuboptData:
         if onlyFinalRun:
             suboptData=tempData
@@ -678,18 +674,18 @@ def run_subopt_till_pathCount(networkMatFilePath,sourceNode,targetNode,
                             verbose=subVerbose)
         suboptDataFilePath='.'.join([outputFilePath,'out'])
         if not validate_subopt_file(suboptDataFilePath):
-            print "ERROR! subopt failed to generate a valid output file. Aborting"
+            print("ERROR! subopt failed to generate a valid output file. Aborting")
             if returnSuboptData:
                 return suboptoptData
             else:
                 return
         pathCount=get_subopt_pathCount(suboptDataFilePath)
         if verbose:
-            print "(%g,%g)"%(float(percentDilation),float(pathCount)),
+            print("(%g,%g)"%(float(percentDilation),float(pathCount)), end=' ')
         if not subVerbose:
-            print ",",
+            print(",", end=' ')
         else:
-            print ""
+            print("")
         tempData=get_subopt_pathData(suboptDataFilePath,subVerbose)   
         if returnSuboptData:
             if onlyFinalRun:
@@ -697,9 +693,9 @@ def run_subopt_till_pathCount(networkMatFilePath,sourceNode,targetNode,
             else:
                 suboptData.append(tempData)
     if verbose and not subVerbose:
-        print ""
+        print("")
     if verbose:
-        print "DONE!"
+        print("DONE!")
     if returnSuboptData:
         return suboptData
     
@@ -709,14 +705,14 @@ def get_subopt_dilations_data(suboptDir,basePattern,sep='.',
                               verbose=False,verboseLevel=0):
     fileSearchPattern=str(sep).join([basePattern,'_'.join(['dilation','*']),'out'])
     if verbose:
-        print 'file search pattern = '+fileSearchPattern
+        print('file search pattern = '+fileSearchPattern)
     searchPathPattern='/'.join([suboptDir,fileSearchPattern])
     if verbose:
-        print 'searchPathPattern = '+searchPathPattern
+        print('searchPathPattern = '+searchPathPattern)
     filePathList=glob.glob(searchPathPattern)
-    fileNameList=map(lambda filepath: filepath.split('/')[-1],filePathList)
+    fileNameList=[filepath.split('/')[-1] for filepath in filePathList]
     if verbose and (verboseLevel > 0):
-        print 'file name list: '+'\n'.join(fileNameList)
+        print('file name list: '+'\n'.join(fileNameList))
     if not onlyMaxDilation:
         suboptDataSets=[]
     else:
@@ -741,7 +737,7 @@ def get_subopt_dilations_data(suboptDir,basePattern,sep='.',
             else:
                 suboptDataSets.append(suboptData)
         else:
-            print "Warning: "+suboptFileName+" was not a valid subopt file."
+            print("Warning: "+suboptFileName+" was not a valid subopt file.")
     if onlyMaxDilation:
         return suboptData
     else:
@@ -752,12 +748,12 @@ def get_index_of_nth_maxRank_element(valList,n,verbose=False):
     u,v=np.unique(valList,return_inverse=True)
     maxRanks=(np.cumsum(np.bincount(v,minlength=u.size))-1)[v]
     if verbose:
-        print 'value array:',
-        print valList
-        print 'rank array:',
-        print maxRanks
+        print('value array:', end=' ')
+        print(valList)
+        print('rank array:', end=' ')
+        print(maxRanks)
     if np.max(maxRanks) < n:
-        print "get nth maxRank: Warning! there are not enough elements"
+        print("get nth maxRank: Warning! there are not enough elements")
         return(len(valList)-1)
     else:
         return [m for m,i in enumerate(maxRanks) if i >= n][0]
@@ -771,7 +767,7 @@ def get_top_n_pathData_paths(pathData,n,verbose=False,verboseLevel=0):
     maxPathIndex=get_index_of_nth_maxRank_element(outData['lengths'],n,
                                                   verbose=subVerbose)
     if verbose:
-        print 'max path index = '+str(maxPathIndex)
+        print('max path index = '+str(maxPathIndex))
     outData['paths']=outData['paths'][0:(maxPathIndex+1)]
     outData['lengths']=outData['lengths'][0:(maxPathIndex+1)]
     outData['count']=len(outData['lengths'])
@@ -784,8 +780,8 @@ def get_pathData_node_count_array(pathData,nNodes,inputIndexBase=0,verbose=False
     return outArray
 
 def get_pathData_node_frequency_array(pathData,nNodes,inputIndexBase=0,verbose=False):
-    outArray=get_pathData_node_count_array(pathData,nNodes,inputIndexBase,verbose)/\
-        pathData['count']
+    outArray=old_div(get_pathData_node_count_array(pathData,nNodes,inputIndexBase,verbose),\
+        pathData['count'])
     return outArray
     
 
@@ -799,8 +795,8 @@ def get_pathData_edge_count_matrix(pathData,nNodes,inputIndexBase=0,verbose=Fals
     return outMat
 
 def get_pathData_edge_frequency_matrix(pathData,nNodes,inputIndexBase=0,verbose=False):
-    outMat=get_pathData_edge_count_matrix(pathData,nNodes,inputIndexBase,verbose)/\
-        pathData['count']
+    outMat=old_div(get_pathData_edge_count_matrix(pathData,nNodes,inputIndexBase,verbose),\
+        pathData['count'])
     return outMat
 
 def serialize_pathData_lengths(pathData):
@@ -808,7 +804,7 @@ def serialize_pathData_lengths(pathData):
 
 def serialize_pathData_paths(pathData):
     return ','.join(
-        map(lambda pathArray:'_'.join(map(str,pathArray)),pathData['paths']))
+        ['_'.join(map(str,pathArray)) for pathArray in pathData['paths']])
 
 def get_1Darray_maxRanks(valArray,unsorted=True,invert=False,verbose=False):
     if unsorted:
@@ -820,10 +816,10 @@ def get_1Darray_maxRanks(valArray,unsorted=True,invert=False,verbose=False):
         sortedVals=valArray
     u,v=np.unique(sortedVals,return_inverse=True)
     if verbose:
-        print 'u:',
-        print u
-        print 'v:',
-        print v
+        print('u:', end=' ')
+        print(u)
+        print('v:', end=' ')
+        print(v)
     maxRanks=(np.cumsum(np.bincount(v,minlength=u.size))-1)[v]
     if unsorted:
         if invert:
@@ -916,7 +912,7 @@ def netMatDict_to_nodeDataTable(netMatDict,
     nodeTables=[]
     if (keyColNames is None):
         keyNames=['Key_%g'%iPart for iPart,part in \
-                  enumerate(netMatDict.keys()[0].split(keySep))]
+                  enumerate(list(netMatDict.keys())[0].split(keySep))]
     else:
         keyNames=keyColNames
     if indexCols is None:
@@ -924,7 +920,7 @@ def netMatDict_to_nodeDataTable(netMatDict,
     else:
         indCols=indexCols
     with tqdm(len(netMatDict)) as pbar:
-        for matKey in netMatDict.keys():
+        for matKey in list(netMatDict.keys()):
             pbar.set_description_str(matKey)
             keyParts=matKey.split('.')
             tempMatLap=matLap(netMatDict[matKey])
@@ -934,7 +930,7 @@ def netMatDict_to_nodeDataTable(netMatDict,
                     np.concatenate([tempMatLap[iRow,0:(iRow-1)],
                                     tempMatLap[iRow,(iRow+1):]])
                  ) for iRow,row in enumerate(tempMatLap)])
-            nodeVals=nodeVals/norm
+            nodeVals=old_div(nodeVals,norm)
             nNodes=len(nodeVals)
             if nodeInds is None:
                 inds=np.arange(nNodes)
@@ -962,7 +958,7 @@ def netMatDict_to_edgeDataTable(netMatDict,
     edgeTables=[]
     if (keyColNames is None):
         keyNames=['Key_%g'%iPart for iPart,part in \
-                  enumerate(netMatDict.keys()[0].split(keySep))]
+                  enumerate(list(netMatDict.keys())[0].split(keySep))]
     else:
         keyNames=keyColNames
     if indexCols is None:
@@ -970,7 +966,7 @@ def netMatDict_to_edgeDataTable(netMatDict,
     else:
         indCols=indexCols
     with tqdm(len(netMatDict)) as pbar:
-        for matKey in netMatDict.keys():
+        for matKey in list(netMatDict.keys()):
             pbar.set_description_str('%s'%matKey)
             keyParts=matKey.split('.')
             tempMat=netMatDict[matKey]
